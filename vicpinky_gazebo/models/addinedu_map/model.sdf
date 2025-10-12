@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<sdf version="1.7">
+  <model name="addinedu_map">
+    <static>true</static>
+    <link name="addinedu_link">
+      <pose>0 0 0 1.5708 0 0</pose>
+      <visual name="addinedu_visual">
+        <geometry>
+          <mesh>
+            <uri>model://addinedu_map/meshes/addinedu.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>1 1 1 1</ambient>
+          <diffuse>0.5 1.0 0.3 1</diffuse>
+        </material>
+      </visual>
+      <collision name="addinedu_collision">
+        <geometry>
+          <mesh>
+            <uri>model://addinedu_map/meshes/addinedu.obj</uri>
+          </mesh>
+        </geometry>
+      </collision>
+    </link>
+  </model>
+</sdf>
