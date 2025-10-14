@@ -90,49 +90,125 @@ controller_server:
     general_goal_checker:
       stateful: True                                # 상태 유지 여부
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.25                       # 목표 지점 xy 허용 오차(미터)
+      xy_goal_tolerance: 0.1                       # 목표 지점 xy 허용 오차(미터)
       yaw_goal_tolerance: 0.1                       # 목표 지점 yaw(회전) 허용 오차(라디안)
 
-    # DWB (Dynamic Window Approach) 지역 경로 계획기 파라미터
+    # MPPI (Model Predictive Path Integral) 지역 경로 계획기 파라미터
     FollowPath:
-      plugin: "dwb_core::DWBLocalPlanner"           # DWB 플러그인 사용
-      debug_trajectory_details: True                # 경로 상세 정보 디버깅 여부
-      min_vel_x: -0.1                                # 최소 x축 속도(m/s) (0.0은 후진 비허용)
-      min_vel_y: 0.0                                # 최소 y축 속도(m/s)
-      max_vel_x: 0.25                               # 최대 x축 속도(m/s)
-      max_vel_y: 0.0                                # 최대 y축 속도(m/s) (0.0은 제자리 회전만 허용)
-      max_vel_theta: 0.7                            # 최대 회전 속도(rad/s)
-      min_speed_xy: 0.0                             # 최소 xy 평면 속도(m/s)
-      max_speed_xy: 0.25                            # 최대 xy 평면 속도(m/s)
-      min_speed_theta: 0.0                          # 최소 회전 속도(rad/s)
-      acc_lim_x: 0.9                                # x축 최대 가속도(m/s^2)
-      acc_lim_y: 0.0                                # y축 최대 가속도(m/s^2)
-      acc_lim_theta: 2.0                            # 회전 최대 가속도(rad/s^2)
-      decel_lim_x: -0.5                             # x축 최대 감속도(m/s^2)
-      decel_lim_y: 0.0                              # y축 최대 감속도(m/s^2)
-      decel_lim_theta: -2.0                         # 회전 최대 감속도(rad/s^2)
-      vx_samples: 20                                # x축 속도 샘플링 개수
-      vy_samples: 5                                 # y축 속도 샘플링 개수
-      vtheta_samples: 20                            # 회전 속도 샘플링 개수
-      sim_time: 1.5                                 # 미래 경로 예측 시간(초)
-      linear_granularity: 0.05                      # 경로 샘플링의 직선 해상도(미터)
-      angular_granularity: 0.025                    # 경로 샘플링의 각도 해상도(라디안)
-      transform_tolerance: 0.2                      # tf 변환 정보의 최대 대기 시간(초)
-      xy_goal_tolerance: 0.25                       # 목표 지점 xy 허용 오차(미터)
-      trans_stopped_velocity: 0.25                  # 정지 상태로 간주할 병진 속도
-      short_circuit_trajectory_evaluation: True     # 유효하지 않은 경로 평가를 조기에 중단할지 여부
-      stateful: True                                # 상태 유지 여부
-      critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"] # 경로 평가 기준 목록
-      BaseObstacle.scale: 0.04                      # 장애물 회피 기준의 가중치
-      PathAlign.scale: 32.0                         # 전역 경로 정렬 기준의 가중치
-      PathAlign.forward_point_distance: 0.1         # 전역 경로 정렬 시 바라볼 앞 점까지의 거리
-      GoalAlign.scale: 24.0                         # 목표 지점 정렬 기준의 가중치
-      GoalAlign.forward_point_distance: 0.1         # 목표 지점 정렬 시 바라볼 앞 점까지의 거리
-      PathDist.scale: 32.0                          # 전역 경로와의 거리 기준의 가중치
-      GoalDist.scale: 24.0                          # 목표 지점과의 거리 기준의 가중치
-      RotateToGoal.scale: 32.0                      # 목표 지점 방향 회전 기준의 가중치
-      RotateToGoal.slowing_factor: 5.0              # 목표 지점 근처에서 회전 시 감속 계수
-      RotateToGoal.lookahead_time: -1.0             # 목표 지점 회전 시 예측 시간 (-1.0은 sim_time 사용)
+      plugin: "nav2_mppi_controller::MPPIController"
+      
+      # 1. 샘플링 및 예측: 좁은 공간 대응력 향상
+      time_steps: 42              # 2.1초 예측 (42 * 0.05s)
+      model_dt: 0.05              # 컨트롤러 주기(1/20Hz)와 일치
+      batch_size: 2000            # 더 많은 경로를 탐색하여 좁은 공간에서 최적 경로를 찾을 확률 증가
+      iteration_count: 1
+      
+      # 2. 로봇 기구학 (사용자 로봇에 맞게 수정 필요)
+      vx_max: 0.25                # 최대 속도는 약간 보수적으로 시작
+      vx_min: -0.15               # 후진 속도
+      wz_max: 0.8                 # 최대 회전 속도
+      ax_max: 1.0
+      ax_min: -0.8
+      az_max: 2.5
+      motion_model: "DiffDrive"   
+
+      # 3. 경로 추종 관련
+      transform_tolerance: 0.2
+      prune_distance: 2.0         # 예측 거리보다 약간 길게 설정
+
+      # 4. 시각화 (튜닝 시 필수!)
+      visualize: true
+
+      # 5. Critic (평가 함수) 설정 - 좁은 공간 주행 최적화
+      critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PreferForwardCritic"]
+      
+      ConstraintCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 5.0
+
+      GoalCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 4.0
+        threshold_to_consider: 1.2
+
+      GoalAngleCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 2.5
+        threshold_to_consider: 0.6
+
+      PreferForwardCritic:
+        enabled: true
+        cost_power: 2
+        cost_weight: 10.0
+        threshold_to_consider: 0.6
+      
+      # ⭐ 핵심: 장애물 회피 Critic
+      CostCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 2.5          # 경로 추종보다 가중치를 높여 장애물 회피를 우선시
+        critical_cost: 300.0      # 이 비용 이상의 경로는 심한 페널티 부여
+        consider_footprint: true  # ⭐ 직사각형 로봇이므로 반드시 true로 설정!
+        collision_cost: 10000.0 # 충돌 경로에 대한 비용
+        near_goal_distance: 0.4
+        
+      # ⭐ 핵심: 경로 추종 Critic
+      PathAlignCritic:            
+        enabled: true
+        cost_power: 1
+        cost_weight: 10.0          # 장애물 회피를 위해 약간 낮은 가중치 부여
+        threshold_to_consider: 0.5
+        max_path_occupancy_ratio: 0.1 # 경로 주변에 장애물이 많아도 경로를 따르도록 허용
+        
+      PathFollowCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 4.0          # PathAlign과 유사한 가중치로 시작
+        threshold_to_consider: 1.2
+
+    # DWB (Dynamic Window Approach) 지역 경로 계획기 파라미터
+    # FollowPath:
+    #   plugin: "dwb_core::DWBLocalPlanner"           # DWB 플러그인 사용
+    #   debug_trajectory_details: True                # 경로 상세 정보 디버깅 여부
+    #   min_vel_x: -0.1                                # 최소 x축 속도(m/s) (0.0은 후진 비허용)
+    #   min_vel_y: 0.0                                # 최소 y축 속도(m/s)
+    #   max_vel_x: 0.25                               # 최대 x축 속도(m/s)
+    #   max_vel_y: 0.0                                # 최대 y축 속도(m/s) (0.0은 제자리 회전만 허용)
+    #   max_vel_theta: 0.7                            # 최대 회전 속도(rad/s)
+    #   min_speed_xy: 0.0                             # 최소 xy 평면 속도(m/s)
+    #   max_speed_xy: 0.25                            # 최대 xy 평면 속도(m/s)
+    #   min_speed_theta: 0.0                          # 최소 회전 속도(rad/s)
+    #   acc_lim_x: 0.9                                # x축 최대 가속도(m/s^2)
+    #   acc_lim_y: 0.0                                # y축 최대 가속도(m/s^2)
+    #   acc_lim_theta: 2.0                            # 회전 최대 가속도(rad/s^2)
+    #   decel_lim_x: -0.5                             # x축 최대 감속도(m/s^2)
+    #   decel_lim_y: 0.0                              # y축 최대 감속도(m/s^2)
+    #   decel_lim_theta: -2.0                         # 회전 최대 감속도(rad/s^2)
+    #   vx_samples: 20                                # x축 속도 샘플링 개수
+    #   vy_samples: 5                                 # y축 속도 샘플링 개수
+    #   vtheta_samples: 20                            # 회전 속도 샘플링 개수
+    #   sim_time: 1.5                                 # 미래 경로 예측 시간(초)
+    #   linear_granularity: 0.05                      # 경로 샘플링의 직선 해상도(미터)
+    #   angular_granularity: 0.03                    # 경로 샘플링의 각도 해상도(라디안)
+    #   transform_tolerance: 0.2                      # tf 변환 정보의 최대 대기 시간(초)
+    #   xy_goal_tolerance: 0.15                       # 목표 지점 xy 허용 오차(미터)
+    #   trans_stopped_velocity: 0.25                  # 정지 상태로 간주할 병진 속도
+    #   short_circuit_trajectory_evaluation: True     # 유효하지 않은 경로 평가를 조기에 중단할지 여부
+    #   stateful: True                                # 상태 유지 여부
+    #   critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"] # 경로 평가 기준 목록
+    #   BaseObstacle.scale: 0.04                      # 장애물 회피 기준의 가중치
+    #   PathAlign.scale: 32.0                         # 전역 경로 정렬 기준의 가중치
+    #   PathAlign.forward_point_distance: 0.1         # 전역 경로 정렬 시 바라볼 앞 점까지의 거리
+    #   GoalAlign.scale: 24.0                         # 목표 지점 정렬 기준의 가중치
+    #   GoalAlign.forward_point_distance: 0.1         # 목표 지점 정렬 시 바라볼 앞 점까지의 거리
+    #   PathDist.scale: 32.0                          # 전역 경로와의 거리 기준의 가중치
+    #   GoalDist.scale: 24.0                          # 목표 지점과의 거리 기준의 가중치
+    #   RotateToGoal.scale: 32.0                      # 목표 지점 방향 회전 기준의 가중치
+    #   RotateToGoal.slowing_factor: 5.0              # 목표 지점 근처에서 회전 시 감속 계수
+    #   RotateToGoal.lookahead_time: -1.0             # 목표 지점 회전 시 예측 시간 (-1.0은 sim_time 사용)
 
 # Local Costmap 파라미터
 # 로봇 주변의 장애물 정보를 실시간으로 반영하는 지역 비용 지도
@@ -154,7 +230,7 @@ local_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"   # 장애물 주변에 팽창 영역(비용 증가)을 만드는 레이어
         cost_scaling_factor: 3.0                    # 팽창 비용 감소 계수
-        inflation_radius: 0.55                       # 장애물로부터 팽창시킬 반경(미터)
+        inflation_radius: 0.45                     # 장애물로부터 팽창시킬 반경(미터)
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"       # 3D 포인트 클라우드 데이터를 2D 비용 지도에 투영하는 레이어
         enabled: True                               # 활성화 여부
@@ -190,7 +266,6 @@ global_costmap:
       global_frame: map                             # 전역 지도의 기준이 될 좌표계 (보통 'map')
       robot_base_frame: base_footprint              # 로봇의 베이스 좌표계
       use_sim_time: False                           # 시뮬레이션 시간 사용 여부
-      robot_radius: 0.25                            # 로봇 반경 (footprint 대신 사용될 수 있음)
       resolution: 0.05                              # 지도 해상도(미터/셀)
       track_unknown_space: true                     # 탐색되지 않은 공간을 추적할지 여부
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"] # 사용할 비용 지도 레이어 플러그인
@@ -204,7 +279,7 @@ global_costmap:
           clearing: True                            # 장애물 제거 여부
           marking: True                             # 장애물 표시 여부
           data_type: "LaserScan"                    # 센서 데이터 타입
-          raytrace_max_range: 3.0                   # 장애물 제거를 위한 레이저 최대 추적 거리
+          raytrace_max_range: 4.0                   # 장애물 제거를 위한 레이저 최대 추적 거리
           raytrace_min_range: 0.0                   # 장애물 제거를 위한 레이저 최소 추적 거리
           obstacle_max_range: 3.5                   # 장애물 표시를 위한 레이저 최대 거리
           obstacle_min_range: 0.0                   # 장애물 표시를 위한 레이저 최소 거리
@@ -214,7 +289,7 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"   # 팽창 레이어
         cost_scaling_factor: 3.0                    # 팽창 비용 감소 계수
-        inflation_radius: 0.4                       # 팽창 반경(미터)
+        inflation_radius: 0.45                       # 팽창 반경(미터)
       always_send_full_costmap: True                # 항상 전체 비용 지도를 발행할지 여부
 
 # Map Server 파라미터
@@ -256,11 +331,11 @@ planner_server:
       analytic_expansion_max_length: 3.0  # For Hybrid/Lattice nodes: The maximum length of the analytic expansion to be considered valid to prevent unsafe shortcutting
       analytic_expansion_max_cost: 200.0  # The maximum single cost for any part of an analytic expansion to contain and be valid, except when necessary on approach to goal
       analytic_expansion_max_cost_override: false  #  Whether or not to override the maximum cost setting if within critical distance to goal (ie probably required)
-      minimum_turning_radius: 0.25        # minimum turning radius in m of path / vehicle
-      reverse_penalty: 2.5            # Penalty to apply if motion is reversing, must be => 1
+      minimum_turning_radius: 0.2        # minimum turning radius in m of path / vehicle
+      reverse_penalty: 2.7            # Penalty to apply if motion is reversing, must be => 1
       change_penalty: 0.0                 # Penalty to apply if motion is changing directions (L to R), must be >= 0
       non_straight_penalty: 1.1          # Penalty to apply if motion is non-straight, must be => 1
-      cost_penalty: 1.5                 # Penalty to apply to higher cost areas when adding into the obstacle map dynamic programming distance expansion heuristic. This drives the robot more towards the center of passages. A value between 1.3 - 3.5 is reasonable.
+      cost_penalty: 1.55          # Penalty to apply to higher cost areas when adding into the obstacle map dynamic programming distance expansion heuristic. This drives the robot more towards the center of passages. A value between 1.3 - 3.5 is reasonable.
       retrospective_penalty: 0.015
       lookup_table_size: 20.0             # Size of the dubin/reeds-sheep distance window to cache, in meters.
       cache_obstacle_heuristic: false     # Cache the obstacle map dynamic programming distance expansion heuristic between subsequent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.
@@ -299,15 +374,15 @@ planner_server:
 
 # Smoother Server 파라미터
 # 전역 경로를 부드럽게 만들어주는 서버
-smoother_server:
-  ros__parameters:
-    use_sim_time: False                             # 시뮬레이션 시간 사용 여부
-    smoother_plugins: ["simple_smoother"]           # 사용할 경로 스무딩 플러그인
-    simple_smoother:
-      plugin: "nav2_smoother::SimpleSmoother"       # Simple Smoother 플러그인
-      tolerance: 1.0e-10                            # 허용 오차
-      max_its: 1000                                 # 최대 반복 횟수
-      do_refinement: True                           # 경로 개선 작업 수행 여부
+# smoother_server:
+#   ros__parameters:
+#     use_sim_time: False                             # 시뮬레이션 시간 사용 여부
+#     smoother_plugins: ["simple_smoother"]           # 사용할 경로 스무딩 플러그인
+#     simple_smoother:
+#       plugin: "nav2_smoother::SimpleSmoother"       # Simple Smoother 플러그인
+#       tolerance: 1.0e-10                            # 허용 오차
+#       max_its: 1000                                 # 최대 반복 횟수
+#       do_refinement: True                           # 경로 개선 작업 수행 여부
 
 # Behavior Server 파라미터
 # 주행 실패 시 수행할 복구 행동들을 관리
