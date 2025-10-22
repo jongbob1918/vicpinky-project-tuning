@@ -260,4 +260,63 @@
         <origin xyz="0.0 0 0.03" rpy="0 0 ${pi}"/>
     </joint>
 
+    <!-- Orbbec Astra Camera Mount -->
+    <link name="${prefix}camera_mount">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="0.06 0.08 0.04"/>
+            </geometry>
+            <material name="gray"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="0.06 0.08 0.04"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="0.05" x="0.06" y="0.08" z="0.04">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link>
+
+    <joint name="${prefix}camera_mount_fixed_joint" type="fixed">
+        <parent link="${prefix}base_link"/>
+        <child link="${prefix}camera_mount"/>
+        <origin xyz="-0.29 0 1.27" rpy="0 0 0"/>
+    </joint>
+
+    <!-- Orbbec Astra Camera Link -->
+    <link name="${prefix}camera_link"/>
+
+    <joint name="${prefix}camera_link_fixed_joint" type="fixed">
+        <parent link="${prefix}camera_mount"/>
+        <child link="${prefix}camera_link"/>
+        <origin xyz="0.03 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- Camera RGB Frame -->
+    <link name="${prefix}camera_rgb_frame"/>
+    <joint name="${prefix}camera_rgb_joint" type="fixed">
+        <parent link="${prefix}camera_link"/>
+        <child link="${prefix}camera_rgb_frame"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- Camera Depth Frame -->
+    <link name="${prefix}camera_depth_frame"/>
+    <joint name="${prefix}camera_depth_joint" type="fixed">
+        <parent link="${prefix}camera_link"/>
+        <child link="${prefix}camera_depth_frame"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- Camera Color Frame (for compatibility) -->
+    <link name="${prefix}camera_color_frame"/>
+    <joint name="${prefix}camera_color_joint" type="fixed">
+        <parent link="${prefix}camera_link"/>
+        <child link="${prefix}camera_color_frame"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
 </robot>

@@ -5,10 +5,10 @@
 ## 1. 진행 현황
 - [x] 워크스페이스 구조 파악 (`README.md`, `vicpinky_*`, `ros2_astra_camera`, `rtabmap_ros-jazzy-devel`)
 - [x] 기존 문서 검토 (`doc/lidar_setup.md`, `ros2_astra_camera/doc/depth_camera_setup.md`)
-- [ ] 실물 로봇에 Astra 장착 및 좌표계 측정
-- [ ] URDF/TF에 카메라 링크 반영
-- [ ] bringup 런치 확장 및 Astra 드라이버 통합
-- [ ] RTAB-Map RGB-D 오도메트리/SLAM 런치 구성
+- [x] 실물 로봇에 Astra 장착 및 좌표계 측정 (2025.10.22 완료)
+- [x] URDF/TF에 카메라 링크 반영 (robot_core.xacro, camera.xacro 수정 완료)
+- [x] bringup 런치 확장 및 Astra 드라이버 통합 (2025.10.22 완료)
+- [x] RTAB-Map RGB-D+LIDAR SLAM 런치 구성 (2025.10.22 완료)
 - [ ] Nav2 + RTAB-Map 시나리오 통합 및 검증
 
 ## 2. 목표 요약
@@ -80,7 +80,14 @@
 - Bringup: `vicpinky_bringup/launch/bringup.launch.xml`
 - RTAB-Map 예제/파라미터: `rtabmap_ros-jazzy-devel/rtabmap_examples/*`, `rtabmap_ros-jazzy-devel/rtabmap_launch/launch/rtabmap.launch.py`
 
-## 8. 미해결 사항 및 메모
-- Astra 장착 좌표 실측 후 URDF 패치 필요.
+## 8. 카메라 실측 정보 (2025.10.22 적용)
+- **카메라 위치**: laser_mount 기준 X축 -29cm, Z축 109cm
+- **base_link 기준**: xyz="-0.29 0 1.27" (laser_mount가 base_link에서 z=0.18에 위치)
+- **방향**: 정면(전방) 향하도록 설정 (rpy="0 0 0")
+- **URDF 적용**: `robot_core.xacro`에 camera_mount, camera_link 추가 완료
+- **Gazebo 모델**: Orbbec Astra 사양에 맞춰 RGB/Depth 센서 설정 완료
+
+## 9. 미해결 사항 및 메모
+- [x] Astra 장착 좌표 실측 후 URDF 패치 완료 (2025.10.22)
 - Visual SLAM 성능 검증을 위해 실내 주행 로그 수집 예정.
 - Nav2 통합 시 2D costmap과 RGB-D 포인트클라우드로 장애물 업데이트를 수행할지 선택 필요.

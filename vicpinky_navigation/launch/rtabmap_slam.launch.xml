@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Arguments -->
+  <arg name="use_sim_time" default="false"/>
+  <arg name="localization" default="false"/>
+  <arg name="use_filtered_scan" default="true"/>
+  <arg name="use_lidar" default="true"/>
+  <arg name="use_rgbd" default="true"/>
+  
+  <!-- Scan topic selection -->
+  <let name="scan_topic" value="/scan_filtered" if="$(var use_filtered_scan)"/>
+  <let name="scan_topic" value="/scan" unless="$(var use_filtered_scan)"/>
+  
+  <!-- RTAB-Map SLAM Node (Mapping mode) -->
+  <node pkg="rtabmap_slam" exec="rtabmap" name="rtabmap" output="screen"
+        unless="$(var localization)">
+    <!-- Load parameters from file -->
+    <param from="$(find-pkg-share vicpinky_navigation)/params/rtabmap_params.yaml"/>
+    
+    <!-- Runtime parameters -->
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+    <param name="subscribe_depth" value="$(var use_rgbd)"/>
+    <param name="subscribe_scan" value="$(var use_lidar)"/>
+    <param name="use_action_for_goal" value="true"/>
+    <param name="delete_db_on_start" value="true"/>
+    
+    <!-- Topic remapping -->
+    <remap from="rgb/image" to="/camera/color/image_raw"/>
+    <remap from="rgb/camera_info" to="/camera/color/camera_info"/>
+    <remap from="depth/image" to="/camera/depth/image_rect_raw"/>
+    <remap from="depth/camera_info" to="/camera/depth/camera_info"/>
+    <remap from="scan" to="$(var scan_topic)"/>
+    <remap from="odom" to="/odom"/>
+  </node>
+  
+  <!-- RTAB-Map Localization mode -->
+  <node pkg="rtabmap_slam" exec="rtabmap" name="rtabmap" output="screen"
+        if="$(var localization)">
+    <param name="frame_id" value="base_link"/>
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+    <param name="subscribe_depth" value="$(var use_rgbd)"/>
+    <param name="subscribe_scan" value="$(var use_lidar)"/>
+    <param name="use_action_for_goal" value="true"/>
+    
+    <param name="Reg/Force3DoF" value="true" type="str"/>
+    <param name="Optimizer/GravitySigma" value="0" type="str"/>
+    <param name="Reg/Strategy" value="2" type="str"/>
+    
+    <param name="RGBD/OptimizeFromGraphEnd" value="false" type="str"/>
+    <param name="RGBD/AngularUpdate" value="0.1" type="str"/>
+    <param name="RGBD/LinearUpdate" value="0.1" type="str"/>
+    <param name="Vis/MinInliers" value="15" type="str"/>
+    
+    <param name="Icp/VoxelSize" value="0.05" type="str"/>
+    <param name="Icp/MaxCorrespondenceDistance" value="0.1" type="str"/>
+    
+    <param name="Grid/FromDepth" value="false" type="str"/>
+    <param name="Grid/RayTracing" value="true" type="str"/>
+    <param name="Grid/3D" value="false" type="str"/>
+    <param name="Grid/RangeMax" value="5" type="str"/>
+    <param name="Grid/RangeMin" value="0.2" type="str"/>
+    <param name="Grid/CellSize" value="0.05" type="str"/>
+    <param name="Grid/NormalsSegmentation" value="false" type="str"/>
+    <param name="Grid/MaxGroundHeight" value="0.05" type="str"/>
+    <param name="Grid/MaxObstacleHeight" value="0.4" type="str"/>
+    
+    <!-- Localization mode parameters -->
+    <param name="Mem/IncrementalMemory" value="false" type="str"/>
+    <param name="Mem/InitWMWithAllNodes" value="true" type="str"/>
+    
+    <remap from="rgb/image" to="/camera/color/image_raw"/>
+    <remap from="rgb/camera_info" to="/camera/color/camera_info"/>
+    <remap from="depth/image" to="/camera/depth/image_rect_raw"/>
+    <remap from="depth/camera_info" to="/camera/depth/camera_info"/>
+    <remap from="scan" to="$(var scan_topic)"/>
+    <remap from="odom" to="/odom"/>
+    
+    <param name="Grid/Published" value="true" type="str"/>
+    <param name="publish_tf" value="true"/>
+  </node>
+  
+  <!-- RTAB-Map Visualization (Optional) -->
+  <node pkg="rtabmap_viz" exec="rtabmap_viz" name="rtabmap_viz" output="screen"
+        if="false">
+    <param name="frame_id" value="base_link"/>
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+    <param name="subscribe_depth" value="$(var use_rgbd)"/>
+    <param name="subscribe_scan" value="$(var use_lidar)"/>
+    <param name="use_action_for_goal" value="true"/>
+    
+    <remap from="rgb/image" to="/camera/color/image_raw"/>
+    <remap from="rgb/camera_info" to="/camera/color/camera_info"/>
+    <remap from="depth/image" to="/camera/depth/image_rect_raw"/>
+    <remap from="depth/camera_info" to="/camera/depth/camera_info"/>
+    <remap from="scan" to="$(var scan_topic)"/>
+    <remap from="odom" to="/odom"/>
+  </node>
+  
+  <!-- Obstacle detection for Nav2 -->
+  <group if="$(var use_rgbd)">
+    <node pkg="rtabmap_util" exec="point_cloud_xyz" name="point_cloud_xyz" output="screen">
+      <param name="decimation" value="2"/>
+      <param name="max_depth" value="3.0"/>
+      <param name="voxel_size" value="0.02"/>
+      
+      <remap from="depth/image" to="/camera/depth/image_rect_raw"/>
+      <remap from="depth/camera_info" to="/camera/depth/camera_info"/>
+      <remap from="cloud" to="/camera/cloud"/>
+    </node>
+    
+    <node pkg="rtabmap_util" exec="obstacles_detection" name="obstacles_detection" output="screen">
+      <param name="frame_id" value="base_link"/>
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <param name="Grid/MaxGroundHeight" value="0.05"/>
+      <param name="Grid/MaxObstacleHeight" value="0.4"/>
+      
+      <remap from="cloud" to="/camera/cloud"/>
+      <remap from="obstacles" to="/camera/obstacles"/>
+      <remap from="ground" to="/camera/ground"/>
+    </node>
+  </group>
+  
+</launch>

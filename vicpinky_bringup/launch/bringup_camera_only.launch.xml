@@ -1,0 +1,20 @@
+<?xml version='1.0' ?>
+
+<launch>
+    <!-- Launch Arguments -->
+    <arg name="use_sim_time" default="False"/>
+
+    <!-- Robot Description Upload -->
+    <include file="$(find-pkg-share vicpinky_description)/launch/upload.launch.xml">
+        <arg name="use_sim_time" value="$(var use_sim_time)"/>
+    </include>
+
+    <!-- RGB-D Camera Only (for Visual SLAM) -->
+    <include file="$(find-pkg-share astra_camera)/launch/astra_mini.launch.py">
+    </include>
+
+    <!-- Vic Pinky Bringup Node -->
+    <node pkg="vicpinky_bringup" exec="bringup">
+    </node>
+
+</launch>

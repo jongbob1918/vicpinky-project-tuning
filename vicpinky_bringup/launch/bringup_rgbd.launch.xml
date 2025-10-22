@@ -1,0 +1,35 @@
+<?xml version='1.0' ?>
+
+<launch>
+    <!-- Launch Arguments -->
+    <arg name="use_sim_time" default="False"/>
+    <arg name="use_lidar" default="True" description="Enable LIDAR sensor"/>
+    <arg name="use_rgbd_camera" default="True" description="Enable RGB-D camera"/>
+    <arg name="filter_yaml_path" default="$(find-pkg-share vicpinky_bringup)/config/laser_filter.yaml" />
+
+    <!-- Robot Description Upload -->
+    <include file="$(find-pkg-share vicpinky_description)/launch/upload.launch.xml">
+        <arg name="use_sim_time" value="$(var use_sim_time)"/>
+    </include>
+
+    <!-- LIDAR (Conditional) -->
+    <group if="$(var use_lidar)">
+        <include file="$(find-pkg-share sllidar_ros2)/launch/sllidar_c1_launch.py">
+        </include>
+
+        <node pkg="laser_filters" exec="scan_to_scan_filter_chain">
+            <param from="$(var filter_yaml_path)" />
+        </node>
+    </group>
+
+    <!-- RGB-D Camera (Conditional) -->
+    <group if="$(var use_rgbd_camera)">
+        <include file="$(find-pkg-share astra_camera)/launch/astra_mini.launch.py">
+        </include>
+    </group>
+
+    <!-- Vic Pinky Bringup Node -->
+    <node pkg="vicpinky_bringup" exec="bringup">
+    </node>
+
+</launch>

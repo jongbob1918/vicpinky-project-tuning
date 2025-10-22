@@ -1,0 +1,76 @@
+# RTAB-Map Parameters for Vic Pinky with RGB-D + LIDAR
+rtabmap:
+  ros__parameters:
+    # Basic Configuration
+    frame_id: "base_link"
+    odom_frame_id: "odom"
+    map_frame_id: "map"
+    
+    # Sensor subscription
+    subscribe_depth: true
+    subscribe_scan: true
+    subscribe_rgb: true
+    
+    # 2D SLAM Configuration
+    Reg/Force3DoF: "true"
+    Optimizer/GravitySigma: "0"
+    
+    # Registration Strategy (Visual + ICP)
+    Reg/Strategy: "2"  # 0=Vis, 1=ICP, 2=Vis+ICP
+    
+    # RGB-D Visual Parameters
+    RGBD/OptimizeFromGraphEnd: "false"
+    RGBD/AngularUpdate: "0.1"        # rad
+    RGBD/LinearUpdate: "0.1"         # m
+    RGBD/ProximityBySpace: "true"
+    RGBD/ProximityMaxGraphDepth: "50"
+    
+    # Visual Feature Parameters
+    Vis/MinInliers: "15"
+    Vis/InlierDistance: "0.1"
+    Vis/MaxFeatures: "400"
+    Vis/CorGuessWinSize: "20"
+    
+    # Keypoint Detector
+    Kp/MaxFeatures: "400"
+    Kp/RoiRatios: "0.03 0.03 0.04 0.04"
+    Kp/DetectorStrategy: "0"  # SURF
+    
+    # ICP Parameters for LIDAR
+    Icp/VoxelSize: "0.05"
+    Icp/MaxCorrespondenceDistance: "0.1"
+    Icp/PM: "true"
+    Icp/PMOutlierRatio: "0.7"
+    
+    # Loop Closure
+    Rtabmap/TimeThr: "0"
+    Rtabmap/DetectionRate: "1"
+    Rtabmap/CreateIntermediateNodes: "false"
+    
+    # Memory Management
+    Mem/RehearsalSimilarity: "0.30"
+    Mem/NotLinkedNodesKept: "false"
+    Mem/STMSize: "30"
+    Mem/LaserScanNormalK: "20"
+    
+    # Grid Map Parameters
+    Grid/FromDepth: "false"
+    Grid/RayTracing: "true"
+    Grid/3D: "false"
+    Grid/RangeMax: "5.0"
+    Grid/RangeMin: "0.2"
+    Grid/CellSize: "0.05"
+    Grid/NormalsSegmentation: "false"
+    Grid/MaxGroundHeight: "0.05"
+    Grid/MaxObstacleHeight: "0.4"
+    Grid/NoiseFilteringRadius: "0.0"
+    Grid/NoiseFilteringMinNeighbors: "5"
+    Grid/NormalSegmentationK: "0"
+    Grid/MaxGroundAngle: "45"
+    Grid/ClusterRadius: "0.1"
+    Grid/MinClusterSize: "10"
+    
+    # Publishing
+    Grid/Published: "true"
+    publish_tf: true
+    tf_delay: 0.05
