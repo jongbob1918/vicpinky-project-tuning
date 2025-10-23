@@ -4,8 +4,6 @@
   <arg name="use_sim_time" default="false"/>
   <arg name="localization" default="false"/>
   <arg name="use_filtered_scan" default="true"/>
-  <arg name="use_lidar" default="true"/>
-  <arg name="use_rgbd" default="true"/>
   
   <!-- Scan topic selection -->
   <let name="scan_topic" value="/scan_filtered" if="$(var use_filtered_scan)"/>
@@ -14,42 +12,63 @@
   <!-- RTAB-Map SLAM Node (Mapping mode) -->
   <node pkg="rtabmap_slam" exec="rtabmap" name="rtabmap" output="screen"
         unless="$(var localization)">
-    <!-- Load parameters from file -->
-    <param from="$(find-pkg-share vicpinky_navigation)/params/rtabmap_params.yaml"/>
-    
-    <!-- Runtime parameters -->
+    <!-- Basic parameters -->
+    <param name="frame_id" value="base_footprint"/>
     <param name="use_sim_time" value="$(var use_sim_time)"/>
-    <param name="subscribe_depth" value="$(var use_rgbd)"/>
-    <param name="subscribe_scan" value="$(var use_lidar)"/>
+    <param name="subscribe_depth" value="true"/>
+    <param name="subscribe_scan" value="true"/>
     <param name="use_action_for_goal" value="true"/>
-    <param name="delete_db_on_start" value="true"/>
+    
+    <!-- 2D SLAM parameters -->
+    <param name="Reg/Force3DoF" value="true" type="str"/>
+    <param name="Optimizer/GravitySigma" value="0" type="str"/>
+    
+    <!-- Registration Strategy: Visual + ICP -->
+    <param name="Reg/Strategy" value="2" type="str"/>
+    
+    <!-- ICP parameters for scan matching -->
+    <param name="Icp/VoxelSize" value="0.05" type="str"/>
+    <param name="Icp/MaxCorrespondenceDistance" value="0.1" type="str"/>
+    <param name="Icp/PM" value="true" type="str"/>
+    <param name="Icp/PMOutlierRatio" value="0.7" type="str"/>
+    
+    <!-- Grid map parameters -->
+    <param name="Grid/FromDepth" value="false" type="str"/>
+    <param name="Grid/RayTracing" value="true" type="str"/>
+    <param name="Grid/3D" value="false" type="str"/>
+    <param name="Grid/RangeMax" value="5" type="str"/>
+    <param name="Grid/RangeMin" value="0.2" type="str"/>
+    <param name="Grid/CellSize" value="0.05" type="str"/>
+    <param name="Grid/NormalsSegmentation" value="false" type="str"/>
+    <param name="Grid/MaxGroundHeight" value="0.05" type="str"/>
+    <param name="Grid/MaxObstacleHeight" value="0.4" type="str"/>
     
     <!-- Topic remapping -->
     <remap from="rgb/image" to="/camera/color/image_raw"/>
     <remap from="rgb/camera_info" to="/camera/color/camera_info"/>
-    <remap from="depth/image" to="/camera/depth/image_rect_raw"/>
+    <remap from="depth/image" to="/camera/depth/image_raw"/>
     <remap from="depth/camera_info" to="/camera/depth/camera_info"/>
     <remap from="scan" to="$(var scan_topic)"/>
     <remap from="odom" to="/odom"/>
+      
+    <!-- Delete database on start -->
+    <param name="delete_db_on_start" value="true"/>
+    <param name="Grid/Published" value="true" type="str"/>
+    <param name="publish_tf" value="true"/>
   </node>
   
   <!-- RTAB-Map Localization mode -->
   <node pkg="rtabmap_slam" exec="rtabmap" name="rtabmap" output="screen"
         if="$(var localization)">
-    <param name="frame_id" value="base_link"/>
+    <param name="frame_id" value="base_footprint"/>
     <param name="use_sim_time" value="$(var use_sim_time)"/>
-    <param name="subscribe_depth" value="$(var use_rgbd)"/>
-    <param name="subscribe_scan" value="$(var use_lidar)"/>
+    <param name="subscribe_depth" value="true"/>
+    <param name="subscribe_scan" value="true"/>
     <param name="use_action_for_goal" value="true"/>
     
     <param name="Reg/Force3DoF" value="true" type="str"/>
     <param name="Optimizer/GravitySigma" value="0" type="str"/>
     <param name="Reg/Strategy" value="2" type="str"/>
-    
-    <param name="RGBD/OptimizeFromGraphEnd" value="false" type="str"/>
-    <param name="RGBD/AngularUpdate" value="0.1" type="str"/>
-    <param name="RGBD/LinearUpdate" value="0.1" type="str"/>
-    <param name="Vis/MinInliers" value="15" type="str"/>
     
     <param name="Icp/VoxelSize" value="0.05" type="str"/>
     <param name="Icp/MaxCorrespondenceDistance" value="0.1" type="str"/>
@@ -70,7 +89,7 @@
     
     <remap from="rgb/image" to="/camera/color/image_raw"/>
     <remap from="rgb/camera_info" to="/camera/color/camera_info"/>
-    <remap from="depth/image" to="/camera/depth/image_rect_raw"/>
+    <remap from="depth/image" to="/camera/depth/image_raw"/>
     <remap from="depth/camera_info" to="/camera/depth/camera_info"/>
     <remap from="scan" to="$(var scan_topic)"/>
     <remap from="odom" to="/odom"/>
@@ -79,45 +98,51 @@
     <param name="publish_tf" value="true"/>
   </node>
   
-  <!-- RTAB-Map Visualization (Optional) -->
-  <node pkg="rtabmap_viz" exec="rtabmap_viz" name="rtabmap_viz" output="screen"
-        if="false">
-    <param name="frame_id" value="base_link"/>
+  <!-- RTAB-Map Visualization -->
+  <node pkg="rtabmap_viz" exec="rtabmap_viz" name="rtabmap_viz" output="screen">
+    <param name="frame_id" value="base_footprint"/>
     <param name="use_sim_time" value="$(var use_sim_time)"/>
-    <param name="subscribe_depth" value="$(var use_rgbd)"/>
-    <param name="subscribe_scan" value="$(var use_lidar)"/>
+    <param name="subscribe_depth" value="true"/>
+    <param name="subscribe_scan" value="true"/>
     <param name="use_action_for_goal" value="true"/>
     
     <remap from="rgb/image" to="/camera/color/image_raw"/>
     <remap from="rgb/camera_info" to="/camera/color/camera_info"/>
-    <remap from="depth/image" to="/camera/depth/image_rect_raw"/>
+    <remap from="depth/image" to="/camera/depth/image_raw"/>
     <remap from="depth/camera_info" to="/camera/depth/camera_info"/>
     <remap from="scan" to="$(var scan_topic)"/>
     <remap from="odom" to="/odom"/>
   </node>
   
   <!-- Obstacle detection for Nav2 -->
-  <group if="$(var use_rgbd)">
-    <node pkg="rtabmap_util" exec="point_cloud_xyz" name="point_cloud_xyz" output="screen">
-      <param name="decimation" value="2"/>
-      <param name="max_depth" value="3.0"/>
-      <param name="voxel_size" value="0.02"/>
-      
-      <remap from="depth/image" to="/camera/depth/image_rect_raw"/>
-      <remap from="depth/camera_info" to="/camera/depth/camera_info"/>
-      <remap from="cloud" to="/camera/cloud"/>
-    </node>
+  <node pkg="rtabmap_util" exec="point_cloud_xyz" name="point_cloud_xyz" output="screen">
+    <param name="decimation" value="2"/>
+    <param name="max_depth" value="3.0"/>
+    <param name="voxel_size" value="0.02"/>
     
-    <node pkg="rtabmap_util" exec="obstacles_detection" name="obstacles_detection" output="screen">
-      <param name="frame_id" value="base_link"/>
-      <param name="use_sim_time" value="$(var use_sim_time)"/>
-      <param name="Grid/MaxGroundHeight" value="0.05"/>
-      <param name="Grid/MaxObstacleHeight" value="0.4"/>
-      
-      <remap from="cloud" to="/camera/cloud"/>
-      <remap from="obstacles" to="/camera/obstacles"/>
-      <remap from="ground" to="/camera/ground"/>
-    </node>
-  </group>
+    <remap from="depth/image" to="/camera/depth/image_raw"/>
+    <remap from="depth/camera_info" to="/camera/depth/camera_info"/>
+    <remap from="cloud" to="/camera/cloud"/>
+  </node>
+  
+  <node pkg="rtabmap_util" exec="obstacles_detection" name="obstacles_detection" output="screen">
+    <param name="frame_id" value="base_footprint"/>
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+    
+    <remap from="cloud" to="/camera/cloud"/>
+    <remap from="obstacles" to="/camera/obstacles"/>
+    <remap from="ground" to="/camera/ground"/>
+  </node>
+  
+  <node pkg="tf2_ros" exec="static_transform_publisher" name="camera_base_footprint"
+        args="0.0 0.0 0.0 0.0 0.0 0.0 base_footprint base_link"/>
+  <node pkg="tf2_ros" exec="static_transform_publisher" name="camera_base_link"
+        args="0.0 0.0 0.0 0.0 0.0 0.0 base_link camera_link"/>
+  <node pkg="tf2_ros" exec="static_transform_publisher" name="camera_optical_frame"
+        args="0.0 0.0 0.0 0.0 0.0 0.0 camera_link camera_rgb_optical_frame"/>
+  <node pkg="tf2_ros" exec="static_transform_publisher" name="gazebo_camera_frame"
+        args="0.0 0.0 0.0 0.0 0.0 0.0 camera_rgb_optical_frame pinky/base_footprint/camera"/>
+  <node pkg="tf2_ros" exec="static_transform_publisher" name="gazebo_imu_frame"
+      args="0.0 0.0 0.0 0.0 0.0 0.0 imu_link pinky/base_footprint/imu"/>
   
 </launch>
