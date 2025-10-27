@@ -1,0 +1,38 @@
+<?xml version='1.0'?>
+<launch>
+    <!--
+    Leading Mode Launch File
+    길안내 모드 전용: 사람 추적 + 거리 유지 + 이탈 감지
+
+    Usage:
+        ros2 launch vicpinky_navigation leading_mode_launch.xml
+    -->
+
+    <arg name="params_file" default="$(find-pkg-share vicpinky_navigation)/params/nav2_params.yaml"/>
+    <arg name="yolo_model" default="yolov8n.pt"/>
+    <arg name="reid_model" default="osnet_x0_25_msmt17.pt"/>
+    <arg name="target_person_id" default="1"/>
+    <arg name="auto_select_closest" default="true"/>
+    <arg name="show_debug_image" default="false"/>
+
+    <group>
+        <!-- Person Tracking Node (BoxMOT + YOLO + Astra Camera) -->
+        <node pkg="vicpinky_navigation" exec="person_tracking_node.py" name="person_tracking" output="screen">
+            <param name="rgb_topic" value="/camera/color/image_raw"/>
+            <param name="depth_topic" value="/camera/depth/image_raw"/>
+            <param name="camera_info_topic" value="/camera/depth/camera_info"/>
+            <param name="yolo_model" value="$(var yolo_model)"/>
+            <param name="reid_model" value="$(var reid_model)"/>
+            <param name="target_person_id" value="$(var target_person_id)"/>
+            <param name="auto_select_closest" value="$(var auto_select_closest)"/>
+            <param name="camera_frame" value="camera_link"/>
+            <param name="show_debug_image" value="$(var show_debug_image)"/>
+        </node>
+
+        <!-- Leading Server (Distance Monitoring + Stop on Deviation) -->
+        <node pkg="vicpinky_navigation" exec="leading_server.py" name="leading_server" output="screen">
+            <param from="$(var params_file)"/>
+        </node>
+    </group>
+
+</launch>

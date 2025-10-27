@@ -450,3 +450,46 @@
       odom_duration: 0.1                              # 오도메트리 데이터 사용 기간
       deadband_velocity: [0.0, 0.0, 0.0]              # 0으로 처리할 속도 임계값 [x, y, theta]
       velocity_timeout: 1.0                           # 속도 명령 타임아웃(초)
+
+
+# 🆕 Following Server 파라미터
+  following_server:
+    ros__parameters:
+      use_sim_time: False
+      controller_frequency: 20.0        # 제어 주기
+      desired_distance: 1.0             # 유지할 거리 (m)
+      detection_timeout: 2.0            # 사람 감지 타임아웃 (초)
+      static_object_timeout: 5.0        # 정지 상태 타임아웃 (초)
+      linear_tolerance: 0.15            # 위치 허용 오차 (m)
+      angular_tolerance: 0.15           # 각도 허용 오차 (rad)
+      max_retries: 3                    # 최대 재시도 횟수
+      base_frame: "base_footprint"
+      fixed_frame: "odom"
+      skip_orientation: true            # 객체 방향 무시
+      search_by_rotating: true          # 이탈 시 회전하며 재탐색
+      search_angle: 1.57                # 탐색 각도 (90도)
+
+      # 🆕 Leading 모드 (수정 후)
+      # leading_mode: true
+      # destination_pose_topic: "/goal_pose"
+      # max_person_distance: 1.5
+
+      # Controller 파라미터 (opennav_docking Controller 사용)
+      controller:
+        k_phi: 3.0
+        k_delta: 2.0
+        v_linear_min: 0.05
+        v_linear_max: 0.25              # 당신의 max_vel_x와 동일
+        v_angular_max: 0.8              # 당신의 wz_max와 동일
+
+  # Leading Server 파라미터
+  # 로봇이 사람을 안내(leading)하면서 거리를 유지하는 노드
+  leading_server:
+    ros__parameters:
+      controller_frequency: 10.0        # 모니터링 주기 (Hz)
+      desired_distance: 1.0             # 유지할 목표 거리 (m)
+      min_person_distance: 0.5          # 최소 거리 - 너무 가까우면 경고 (m)
+      max_person_distance: 2.0          # 최대 거리 - 이탈로 간주하여 정지 (m)
+      detection_timeout: 3.0            # 사람 감지 타임아웃 (초)
+      base_frame: "base_footprint"      # 로봇 베이스 좌표계
+      person_pose_topic: "/person_pose" # 사람 위치 토픽 (뎁스 카메라에서 발행)

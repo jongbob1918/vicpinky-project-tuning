@@ -30,4 +30,15 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+# Install Python scripts
+install(
+  PROGRAMS
+    scripts/leading_server.py
+    scripts/person_tracking_node.py
+    scripts/person_detector_node.py
+    scripts/test_person_publisher.py
+    scripts/test_leading_client.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_package()
